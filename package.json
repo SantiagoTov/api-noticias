@@ -5,8 +5,7 @@
   "main": "api/index.ts",
   "scripts": {
     "dev": "vercel dev",
-    "build": "tsc",
-    "start": "node dist/api/index.js"
+    "build": "tsc --noEmit"
   },
   "keywords": [
     "news",

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arpón IA — News Feed Microservice</title>
+  <style>
+    body {
+      background: #070b14;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      background: rgba(38, 230, 255, 0.1);
+      border: 1px solid rgba(38, 230, 255, 0.3);
+      color: #26e6ff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin: 0 0 1rem;
+      color: #ffffff;
+    }
+    p {
+      max-width: 600px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin: 0 0 2rem;
+    }
+    .endpoint {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      font-family: monospace;
+      color: #26e6ff;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .endpoint:hover {
+      background: rgba(38, 230, 255, 0.1);
+      border-color: #26e6ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">● SISTEMA OPERATIVO</div>
+  <h1>Arpón IA — News Feed Microservice</h1>
+  <p>Microservicio serverless de ingesta, filtrado y caché inteligente de noticias tecnológicas vía ApiTube para la red editorial de Arpón IA.</p>
+  <a class="endpoint" href="/api/news" target="_blank">GET /api/news →</a>
+</body>
+</html>
