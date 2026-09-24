@@ -1,0 +1,27 @@
+{
+  "name": "api-noticias",
+  "version": "1.0.0",
+  "description": "Microservicio Serverless en Vercel para ingesta y caché de noticias de IA y Negocios vía ApiTube para Arpón IA",
+  "main": "api/index.ts",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc",
+    "start": "node dist/api/index.js"
+  },
+  "keywords": [
+    "news",
+    "ai",
+    "apitube",
+    "serverless",
+    "vercel",
+    "arpon-ia"
+  ],
+  "author": "Santiago Tovar <santiago@arpon.co>",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vercel/node": "^5.1.8",
+    "typescript": "^5.7.2"
+  }
+}
