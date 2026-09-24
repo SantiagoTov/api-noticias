@@ -149,8 +149,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const rawImage = mediaImage || 
         (typeof art.image === 'object' && art.image?.url ? art.image.url : (art.image || art.image_url || art.imageUrl || ''));
       
-      // Fallback a imagen tecnológica de alta resolución si ApiTube no trae imagen
-      const safeImage = (typeof rawImage === 'string' && rawImage.startsWith('http'))
+      // Validar que la imagen sea un archivo gráfico real (no un pdf ni un icono diminuto)
+      const isValidGraphic = typeof rawImage === 'string' 
+        && rawImage.startsWith('http') 
+        && !rawImage.toLowerCase().endsWith('.pdf')
+        && !rawImage.toLowerCase().includes('flaticon')
+        && !rawImage.toLowerCase().includes('icon');
+
+      const safeImage = isValidGraphic
         ? rawImage 
         : `https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80`;
 
