@@ -102,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const targetUrl = new URL(baseUrl);
     targetUrl.searchParams.set('title', selectedTitle);
     targetUrl.searchParams.set('per_page', String(maxItems));
-    targetUrl.searchParams.set('has_image', 'true');
+    targetUrl.searchParams.set('has_image', '1');
     targetUrl.searchParams.set('api_key', apiKey);
 
     const apiResponse = await fetch(targetUrl.toString(), {
