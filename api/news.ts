@@ -88,28 +88,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Definir queries especializadas para B2B e IA
   const queryMap: Record<string, string> = {
-    ia: 'inteligencia artificial OR "artificial intelligence" OR "agentes de IA" OR LLM OR OpenAI OR Claude',
-    automation: 'automatizacion empresas OR "workflow automation" OR n8n OR "procesos de negocio"',
-    business: '"economia mundial" OR "tecnologia empresarial" OR "transformacion digital" OR startups',
-    all: '("inteligencia artificial" OR "artificial intelligence" OR "agentes IA" OR "automatizacion") AND (empresas OR negocios OR software)'
+    ia: 'inteligencia artificial OR AI OR "agentes de IA" OR OpenAI OR Claude',
+    automation: 'automatizacion empresas OR "workflow automation" OR n8n',
+    business: 'tecnologia empresarial OR "transformacion digital" OR startups',
+    all: 'inteligencia artificial OR automatizacion OR "agentes IA"'
   };
 
-  const selectedQuery = queryMap[topic as string] || queryMap.all;
-  const baseUrl = process.env.APITUBE_BASE_URL || 'https://api.apitube.io/v1/news';
+  const selectedTitle = queryMap[topic as string] || queryMap.all;
+  const baseUrl = process.env.APITUBE_BASE_URL || 'https://api.apitube.io/v1/news/everything';
 
   try {
-    // Petición a ApiTube
+    // Petición a ApiTube (/v1/news/everything)
     const targetUrl = new URL(baseUrl);
-    targetUrl.searchParams.set('q', selectedQuery);
-    targetUrl.searchParams.set('per_page', '25');
-    targetUrl.searchParams.set('language', 'es,en');
-    targetUrl.searchParams.set('sort', 'published_at_desc');
+    targetUrl.searchParams.set('title', selectedTitle);
+    targetUrl.searchParams.set('per_page', String(maxItems));
+    targetUrl.searchParams.set('has_image', 'true');
+    targetUrl.searchParams.set('api_key', apiKey);
 
     const apiResponse = await fetch(targetUrl.toString(), {
       method: 'GET',
       headers: {
-        'X-Api-Key': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
+        'X-API-Key': apiKey,
         'Accept': 'application/json'
       }
     });
@@ -123,22 +122,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const rawData = await apiResponse.json();
-    const articlesList: ApiTubeArticle[] = Array.isArray(rawData)
+    const articlesList: any[] = Array.isArray(rawData)
       ? rawData
-      : (rawData.data || rawData.articles || rawData.results || []);
+      : (rawData.results || rawData.data || rawData.articles || []);
 
     // Normalizar y enriquecer noticias para Arpón IA
-    const normalized: NormalizedNewsItem[] = articlesList.map((art, index) => {
-      const pubDate = art.published_at || art.publishedAt || new Date().toISOString();
-      const rawImage = art.image || art.image_url || '';
+    const normalized: NormalizedNewsItem[] = articlesList.map((art: any, index: number) => {
+      const pubDate = art.published_at || art.publish_date || art.publishedAt || new Date().toISOString();
+      const rawImage = typeof art.image === 'object' && art.image?.url 
+        ? art.image.url 
+        : (art.image || art.image_url || art.imageUrl || '');
       
       // Fallback a imagen tecnológica de alta resolución si ApiTube no trae imagen
-      const safeImage = rawImage.startsWith('http') 
+      const safeImage = (typeof rawImage === 'string' && rawImage.startsWith('http'))
         ? rawImage 
         : `https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80`;
 
-      const sourceName = typeof art.source === 'object' && art.source?.name
-        ? art.source.name
+      const sourceName = typeof art.source === 'object' 
+        ? (art.source.name || art.source.title || art.source.domain || 'Tech News')
         : (typeof art.source === 'string' ? art.source : 'Tech News Hub');
 
       // Crear slug amigable para URL
