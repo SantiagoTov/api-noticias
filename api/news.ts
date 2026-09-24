@@ -65,7 +65,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     topic = 'all',
     limit = '10',
     force_refresh = 'false',
-    secret = ''
+    secret = '',
+    q = '',
+    debug = 'false'
   } = req.query;
 
   const now = Date.now();
@@ -73,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isForceRefresh = force_refresh === 'true' && secret === process.env.CRON_SECRET;
 
   // Servir desde caché en memoria si está vigente
-  if (!isForceRefresh && cachedData && (now - cachedData.timestamp < CACHE_TTL_MS) && cachedData.topic === topic) {
+  if (!isForceRefresh && debug !== 'true' && cachedData && (now - cachedData.timestamp < CACHE_TTL_MS) && cachedData.topic === topic) {
     res.setHeader('X-Cache-Status', 'HIT');
     res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${Math.floor(CACHE_TTL_MS / 1000)}, stale-while-revalidate=3600`);
     return res.status(200).json({
@@ -86,15 +88,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Definir queries especializadas para B2B e IA
+  // Queries directas y limpias sin operadores booleanos que confundan al motor de ApiTube
   const queryMap: Record<string, string> = {
-    ia: 'inteligencia artificial OR AI OR "agentes de IA" OR OpenAI OR Claude',
-    automation: 'automatizacion empresas OR "workflow automation" OR n8n',
-    business: 'tecnologia empresarial OR "transformacion digital" OR startups',
-    all: 'inteligencia artificial OR automatizacion OR "agentes IA"'
+    ia: 'inteligencia artificial',
+    automation: 'automatizacion',
+    business: 'tecnologia empresas',
+    all: 'inteligencia artificial'
   };
 
-  const selectedTitle = queryMap[topic as string] || queryMap.all;
+  const selectedTitle = (q as string) || queryMap[topic as string] || 'inteligencia artificial';
   const baseUrl = process.env.APITUBE_BASE_URL || 'https://api.apitube.io/v1/news/everything';
 
   try {
@@ -122,6 +124,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const rawData = await apiResponse.json();
+
+    if (debug === 'true') {
+      return res.status(200).json({
+        debug: true,
+        targetUrl: targetUrl.toString().replace(apiKey, 'REDACTED'),
+        rawData
+      });
+    }
+
     const articlesList: any[] = Array.isArray(rawData)
       ? rawData
       : (rawData.results || rawData.data || rawData.articles || []);
