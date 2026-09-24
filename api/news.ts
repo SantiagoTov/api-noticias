@@ -140,9 +140,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Normalizar y enriquecer noticias para Arpón IA
     const normalized: NormalizedNewsItem[] = articlesList.map((art: any, index: number) => {
       const pubDate = art.published_at || art.publish_date || art.publishedAt || new Date().toISOString();
-      const rawImage = typeof art.image === 'object' && art.image?.url 
-        ? art.image.url 
-        : (art.image || art.image_url || art.imageUrl || '');
+      
+      // ApiTube entrega las imágenes en el arreglo 'media'
+      const mediaImage = Array.isArray(art.media) 
+        ? art.media.find((m: any) => m.type === 'image' || typeof m.url === 'string')?.url 
+        : null;
+
+      const rawImage = mediaImage || 
+        (typeof art.image === 'object' && art.image?.url ? art.image.url : (art.image || art.image_url || art.imageUrl || ''));
       
       // Fallback a imagen tecnológica de alta resolución si ApiTube no trae imagen
       const safeImage = (typeof rawImage === 'string' && rawImage.startsWith('http'))
@@ -153,6 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? (art.source.name || art.source.title || art.source.domain || 'Tech News')
         : (typeof art.source === 'string' ? art.source : 'Tech News Hub');
 
+      // Descripción limpia
+      const cleanDesc = art.description 
+        || (Array.isArray(art.sentences) && art.sentences.length > 0 ? art.sentences[0].sentence : '')
+        || art.summary 
+        || '';
+
       // Crear slug amigable para URL
       const cleanSlug = (art.title || `noticia-${index}`)
         .toLowerCase()
@@ -162,16 +173,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .replace(/^-+|-+$/g, '')
         .slice(0, 80);
 
+      const tags = Array.isArray(art.keywords) && art.keywords.length > 0 
+        ? art.keywords.slice(0, 5) 
+        : ['IA', 'Tecnología', 'Automatización', 'Empresas'];
+
       return {
         id: `${cleanSlug}-${Date.parse(pubDate) || Date.now()}`.slice(0, 100),
         title: (art.title || '').trim(),
-        description: (art.description || art.body || '').slice(0, 320).trim(),
+        description: cleanDesc.slice(0, 350).trim(),
         imageUrl: safeImage,
         source: sourceName,
         sourceUrl: art.url || '',
         publishedAt: pubDate,
         topic: (topic as string) || 'all',
-        suggestedTags: ['IA', 'Tecnología', 'Automatización', 'Empresas']
+        suggestedTags: tags
       };
     });
 
