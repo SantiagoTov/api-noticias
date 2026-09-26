@@ -34,7 +34,7 @@ interface NormalizedNewsItem {
 let cachedData: {
   timestamp: number;
   items: NormalizedNewsItem[];
-  topic: string;
+  key: string;
 } | null = null;
 
 const CACHE_TTL_MS = (parseInt(process.env.CACHE_TTL_SECONDS || '10800', 10)) * 1000;
@@ -74,8 +74,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const maxItems = Math.min(Math.max(parseInt(limit as string, 10) || 10, 1), 30);
   const isForceRefresh = force_refresh === 'true' && secret === process.env.CRON_SECRET;
 
+  // Queries directas y limpias sin operadores booleanos que confundan al motor de ApiTube
+  const queryMap: Record<string, string> = {
+    ia: 'inteligencia artificial',
+    automation: 'automatizacion',
+    business: 'tecnologia empresas',
+    all: 'inteligencia artificial'
+  };
+
+  const selectedTitle = (q as string) || queryMap[topic as string] || 'inteligencia artificial';
+  const cacheKey = `${topic}_${maxItems}_${selectedTitle}`;
+
   // Servir desde caché en memoria si está vigente
-  if (!isForceRefresh && debug !== 'true' && cachedData && (now - cachedData.timestamp < CACHE_TTL_MS) && cachedData.topic === topic) {
+  if (!isForceRefresh && debug !== 'true' && cachedData && (now - cachedData.timestamp < CACHE_TTL_MS) && cachedData.key === cacheKey) {
     res.setHeader('X-Cache-Status', 'HIT');
     res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${Math.floor(CACHE_TTL_MS / 1000)}, stale-while-revalidate=3600`);
     return res.status(200).json({
@@ -87,16 +98,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: cachedData.items.slice(0, maxItems)
     });
   }
-
-  // Queries directas y limpias sin operadores booleanos que confundan al motor de ApiTube
-  const queryMap: Record<string, string> = {
-    ia: 'inteligencia artificial',
-    automation: 'automatizacion',
-    business: 'tecnologia empresas',
-    all: 'inteligencia artificial'
-  };
-
-  const selectedTitle = (q as string) || queryMap[topic as string] || 'inteligencia artificial';
   const baseUrl = process.env.APITUBE_BASE_URL || 'https://api.apitube.io/v1/news/everything';
 
   try {
@@ -200,7 +201,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     cachedData = {
       timestamp: now,
       items: normalized,
-      topic: topic as string
+      key: cacheKey
     };
 
     // Cache-Control Edge de Vercel (3 horas en CDN)
