@@ -52,13 +52,15 @@ const CACHE_TTL_MS = (parseInt(process.env.CACHE_TTL_SECONDS || '10800', 10)) * 
 /** Topics disponibles. `all` es el default que usa el cron: no cambiar su query. */
 export const queryMap: Record<string, string> = {
   ia: 'inteligencia artificial',
-  agentes: 'agentes IA autonomos empresas',
-  automatizacion: 'automatizacion procesos empresas',
-  negocios: 'inteligencia artificial empresas negocios',
-  costos: 'costo implementar inteligencia artificial empresa',
-  modelos: 'nuevos modelos IA lanzamiento',
-  regulacion: 'regulacion inteligencia artificial',
-  marketing: 'marketing inteligencia artificial SEO',
+  // Queries verificadas en vivo 2026-09-27: las multi-palabra estrechas devolvían 0
+  // en ApiTube; estas devuelven resultados (probado con debug=true, raw>0).
+  agentes: 'agentes IA',
+  automatizacion: 'automatización',
+  negocios: 'IA empresas',
+  costos: 'costo IA',
+  modelos: 'modelos IA',
+  regulacion: 'ley IA',
+  marketing: 'marketing IA',
   automation: 'automatizacion', // compat: clave histórica
   business: 'tecnologia empresas', // compat: clave histórica
   all: 'inteligencia artificial',
