@@ -47,6 +47,14 @@ const CACHE_TTL_MS = (parseInt(process.env.CACHE_TTL_SECONDS || '10800', 10)) * 
 // Reglas: 1 query por request (no multiplicar llamadas a ApiTube) →
 // normalizar → excluir basura/duplicados → scoring → ordenar → top N.
 // El contrato de la API (params, forma de respuesta) NO cambia.
+//
+// Perfiles de consulta (misma key de ApiTube, 2026-09-27):
+//  - "blog" (arpon.lat): topic=xxx|all (queries ES afinadas en queryMap),
+//    sin lang/country. 2 ciclos/día, ~2-4 req/día. NO TOCAR su afinación.
+//  - "tiktok" (canal US, noticias tech EN): q=<query EN> + lang=en +
+//    country=us. El perfil vive en ~/workspace/tiktok/ingesta/ (keywords,
+//    rotación experimental, caché local). ~4-6 req/día.
+// Combinado: <10 req/día contra 100 del plan Free.
 // ---------------------------------------------------------------------------
 
 /** Topics disponibles. `all` es el default que usa el cron: no cambiar su query. */
@@ -228,6 +236,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     force_refresh = 'false',
     secret = '',
     q = '',
+    lang = '',
+    country = '',
     debug = 'false'
   } = req.query;
 
@@ -237,7 +247,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Queries directas y limpias sin operadores booleanos que confundan al motor de ApiTube
   const selectedTitle = (q as string) || queryMap[topic as string] || 'inteligencia artificial';
-  const cacheKey = `${topic}_${maxItems}_${selectedTitle}`;
+  // lang/country son opcionales y solo los usa el perfil "tiktok" (2026-09-27):
+  // se reenvían a ApiTube como language.code / source.country.code.
+  // Sin ellos, el comportamiento es idéntico al histórico (perfil "blog").
+  const cacheKey = `${topic}_${maxItems}_${selectedTitle}_${lang}_${country}`;
 
   // Servir desde caché en memoria si está vigente
   if (!isForceRefresh && debug !== 'true' && cachedData && (now - cachedData.timestamp < CACHE_TTL_MS) && cachedData.key === cacheKey) {
@@ -260,6 +273,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     targetUrl.searchParams.set('title', selectedTitle);
     targetUrl.searchParams.set('per_page', String(maxItems));
     targetUrl.searchParams.set('has_image', '1');
+    // Filtros del perfil "tiktok" (opcionales; el perfil "blog" no los envía)
+    if (lang) targetUrl.searchParams.set('language.code', String(lang));
+    if (country) targetUrl.searchParams.set('source.country.code', String(country));
     targetUrl.searchParams.set('api_key', apiKey);
 
     const apiResponse = await fetch(targetUrl.toString(), {
