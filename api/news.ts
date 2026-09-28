@@ -54,7 +54,8 @@ const CACHE_TTL_MS = (parseInt(process.env.CACHE_TTL_SECONDS || '10800', 10)) * 
 //  - "tiktok" (canal US, noticias tech EN): q=<query EN> + lang=en +
 //    country=us. El perfil vive en ~/workspace/tiktok/ingesta/ (keywords,
 //    rotación experimental, caché local). ~4-6 req/día.
-// Combinado: <10 req/día contra 100 del plan Free.
+// Combinado: <11 req/día contra 500/mes del plan Free
+// (blog 2-4/día + tiktok ~7/día; ver ESTRATEGIA-CUOTA.md en tiktok/ingesta/).
 // ---------------------------------------------------------------------------
 
 /** Topics disponibles. `all` es el default que usa el cron: no cambiar su query. */
@@ -105,9 +106,12 @@ const GLOBAL_AI_KEYWORDS = [
 ];
 
 // Patrones de ruido: se excluyen (no solo se penalizan).
+// (2026-09-28: agregados patrones de ofertas afiliadas — contaminaban las
+// queries de big tech del perfil tiktok, p. ej. "Apple" ~60% deals.)
 const JUNK_PATTERNS = [
   'horoscopo', 'farándula', 'farandula', 'deportes', 'meme',
   'sorteo', 'obituario', 'fallece', 'boda', 'divorcio', 'reality',
+  'deals', 'clearance', 'price drop', 'prime day',
 ];
 
 // Boost leve (no filtro) para prensa con historial de calidad.
